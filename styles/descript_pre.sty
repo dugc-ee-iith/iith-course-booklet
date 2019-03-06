@@ -1,0 +1,27 @@
+\documentclass[10pt, a4paper]{article}
+
+\usepackage[left=2.5cm, right=2.5cm]{geometry}
+\usepackage{fontspec}%
+\defaultfontfeatures{Ligatures=TeX}%
+\fontspec{Segoe UI}
+\setmainfont{Segoe UI}
+
+\usepackage{longtable}
+\usepackage[svgnames]{xcolor}
+\usepackage{colortbl}%
+  \newcommand{\myrowcolour}{\rowcolor[gray]{0.925}}
+\usepackage{booktabs}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\newcommand{\describe}[4]{
+    %\begin{minipage}[t]{0.3\linewidth}
+    \flushleft{
+        \textcolor{Crimson}{\textbf{\textsc{#1}}} - \textbf{#2} #3 \newline
+        \textcolor{Grey}{\small{\textbf{#4}}}
+    }
+    %\end{minipage} 
+}
+\newcommand{\syllabus}[1]{#1} %{\begin{minipage}[t]{0.7\linewidth} #1 \end{minipage}}
+\usepackage{parcolumns}
+\usepackage{paracol}
+
+\begin{document}

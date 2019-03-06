@@ -1,0 +1,17 @@
+\documentclass{article}
+
+% install the truetype fonts which are provided in this folder as
+% system fonts. Fontspec can then see them.
+% Use apt install texlive-luatex is there is an error in:
+% lualatex test-fonts.tex
+
+\usepackage{fontspec}
+\usepackage{xcolor}
+%\setmainfont{Segoe UI}
+%\setmainfont{Palatino Linotype}
+%\setmainfont{Roboto}
+\fontspec[Color=red]{Tex Gyre Pagella}
+\setmainfont{TeX Gyre Pagella}
+\begin{document}
+Lorem ipsum...
+\end{document}
