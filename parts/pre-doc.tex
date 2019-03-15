@@ -1,10 +1,12 @@
 \documentclass[10pt, a4paper]{article}
 
-\usepackage[left=2.5cm, right=2.5cm]{geometry}
+\usepackage[margin=2cm]{geometry}
 \usepackage{fontspec}%
 \defaultfontfeatures{Ligatures=TeX}%
-\fontspec{Segoe UI}
-\setmainfont{Segoe UI}
+%\fontspec{Segoe UI}
+\fontspec{Tex Gyre Pagella}
+%\setmainfont{Segoe UI}
+\setmainfont{Tex Gyre Pagella}
 
 \usepackage{longtable}
 \usepackage[svgnames]{xcolor}
@@ -12,6 +14,8 @@
   \newcommand{\myrowcolour}{\rowcolor[gray]{0.925}}
 \usepackage{booktabs}
 \newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+
+% macro for course-description table
 \newcommand{\describe}[4]{
     %\begin{minipage}[t]{0.3\linewidth}
     \flushleft{
@@ -23,5 +27,16 @@
 \newcommand{\syllabus}[1]{#1} %{\begin{minipage}[t]{0.7\linewidth} #1 \end{minipage}}
 \usepackage{parcolumns}
 \usepackage{paracol}
+
+% macros for curriculum table
+\newcommand{\currformat}[4]{
+    %\begin{minipage}[t]{0.3\linewidth}
+    #1 & \textcolor{Crimson}{\textbf{#2}} & #3 & #4 \\
+    %\end{minipage} 
+}
+
+%\newcommand{\syllabus}[1]{#1} %{\begin{minipage}[t]{0.7\linewidth} #1 \end{minipage}}
+%\usepackage{parcolumns}
+%\usepackage{paracol}
 
 \begin{document}
