@@ -1,4 +1,10 @@
-\documentclass[10pt, a4paper]{article}
+\documentclass[10pt, a4paper]{book}
+
+\input{./parts/preamble3}
+%\usepackage{titlesec}
+%\usepackage{fncychap}
+\usepackage{parskip}
+%\usepackage{sans}
 
 \usepackage[margin=2cm]{geometry}
 \usepackage{fontspec}%
@@ -12,19 +18,23 @@
 \usepackage[svgnames]{xcolor}
 \usepackage{colortbl}%
   \newcommand{\myrowcolour}{\rowcolor[gray]{0.925}}
+\definecolor{lightblue}{rgb}{0.95,0.95,1.0}
 \usepackage{booktabs}
 \newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\usepackage{fancybox}
+\usepackage{tcolorbox}
 
 % macro for course-description table
 \newcommand{\describe}[4]{
     %\begin{minipage}[t]{0.3\linewidth}
     \flushleft{
-        \textcolor{Crimson}{\textbf{\textsc{#1}}} - \textbf{#2} #3 \newline
-        \textcolor{Grey}{\small{\textbf{#4}}}
+        \textcolor{Crimson}{\textbf{\textsc{#1}}} \hspace{3mm} \textcolor{Black}{\textbf{#2}} \newline
+        \textcolor{Black}{\small{#3}} \newline
+        \textcolor{Grey}{\small{#4}}
     }
     %\end{minipage} 
 }
-\newcommand{\syllabus}[1]{#1} %{\begin{minipage}[t]{0.7\linewidth} #1 \end{minipage}}
+\newcommand{\syllabus}[1]{\small{#1}} %{\begin{minipage}[t]{0.7\linewidth} #1 \end{minipage}}
 \usepackage{parcolumns}
 \usepackage{paracol}
 
@@ -35,8 +45,38 @@
     %\end{minipage} 
 }
 
+\newcommand{\surrformat}[3]{
+    %\begin{minipage}[t]{0.3\linewidth}
+    #1 & \textcolor{Crimson}{\textbf{#2}} & #3 \\
+    %\end{minipage} 
+}
+
 %\newcommand{\syllabus}[1]{#1} %{\begin{minipage}[t]{0.7\linewidth} #1 \end{minipage}}
 %\usepackage{parcolumns}
 %\usepackage{paracol}
 
+%\setlength\itemsep{-2mm}
+\usepackage{enumitem}
+\setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{calrsfs}
+\title{Fractal Academic Booklet 2019}
+\author{}
+\date{}
+
+
 \begin{document}
+
+%\maketitle
+
+\input{./parts/director-message}
+\begingroup
+\let\cleardoublepage\clearpage
+\tableofcontents
+\endgroup
+\chapter*{1 Introduction}\stepcounter{chapter}\addcontentsline{toc}{chapter}{1 Introduction}
+\input{./parts/booklet-intro}
+
+

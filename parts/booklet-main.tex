@@ -1,0 +1,30 @@
+\documentclass[11pt]{book}
+\input{preamble3}
+%\usepackage{titlesec}
+%\usepackage{fncychap}
+\usepackage{parskip}
+\usepackage{sans}
+
+
+\title{Fractal Academic Booklet 2019}
+\author{}
+\date{}
+
+\begin{document}
+
+%\maketitle
+
+\input{director-message}
+\begingroup
+\let\cleardoublepage\clearpage
+\tableofcontents
+\endgroup
+\chapter*{1 Introduction}\stepcounter{chapter}\addcontentsline{toc}{chapter}{1 Introduction}
+\input{booklet-intro}
+\chapter*{2 B.Tech Course Curriclum}\stepcounter{chapter}\addcontentsline{toc}{chapter}{2 B.Tech Course Curriculum}
+\chapter*{3 Course Descriptions}\stepcounter{chapter}\addcontentsline{toc}{chapter}{3 Course Descriptions}
+
+
+
+
+\end{document}
