@@ -19,17 +19,6 @@ M3yr_curr = ['./data/PG/MTech-3yr/'+y for y in [x[2] for x in walk('./data/PG/MT
 from openpyxl import load_workbook
 import sqlite3
 
-def get_course_db(dept):
-    con = sqlite3.connect('./courses.db')
-    cur = con.cursor()
-    #check if it is in the db already
-    if dept=='EP': dept = 'PH'
-    chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
-    chk_res = cur.execute(chk).fetchall()
-    if len(chk_res)==0: 
-        print("Table %s_courses not found, please upload..." % dept)
-        sys.exit()
-    return cur
 
 no_cap_list = ['CS', 'CY', 'II', 'in', 'and', '2d', 'for', 'a', 'HT', 'MT', 
         'is', 'of', 'to', 'the', 'PH', 'DSP', 'EE', 'LA', 'CA', 'FEM', 'CFD', 'IC',
@@ -42,7 +31,53 @@ def capitals(s):
         res += w + ' '
     #print(res)
     return res
-    
+
+import re
+tex_conv = {
+        '&': r'\&',
+        '%': r'\%',
+        '$': r'\$',
+        '#': r'\#',
+        '_': r'\_',
+        '{': r'\{',
+        '}': r'\}',
+        '~': r'\textasciitilde{}',
+        '^': r'\^{}',
+        '\\?P<symb>[a-zA-Z]': '\\{\\g<symb>}',
+        '<': r'\textless{}',
+        '>': r'\textgreater{}',
+        }
+tex_regex = re.compile('|'.join(re.escape(key) for key in sorted(tex_conv.keys(), key = lambda item: - len(item))))
+def tex_escape(text):
+    """
+        :param text: a plain text message
+        :return: the message escaped to appear correctly in LaTeX
+    """
+    return tex_regex.sub(lambda match: tex_conv[match.group()], text)
+
+def sanitize(code, name, credits, segments, pre_req, syl):
+    if code is not None: code = code.replace(' ', '').upper().strip()
+    if name is not None: name = capitals(name).replace('&', 'and').strip()
+    try: credits = float(credits)
+    except: credits = 1.0
+    segments = str(segments).strip()
+    if segments == None or segments == 'None': segments = ''
+    if pre_req == None or pre_req == 'None': pre_req = '' # pre_reqs are not processed as codes, should be.
+    else: pre_req = pre_req.replace('&', 'and')
+    if syl is not None: syl = syl.replace('&', 'and').replace('\\\\ [', '[') #tex_escape(tex_escape(syl))
+    return code, name, credits, segments, pre_req, syl
+
+def get_course_db(dept):
+    con = sqlite3.connect('./courses.db')
+    cur = con.cursor()
+    #check if it is in the db already
+    if dept=='EP': dept = 'PH'
+    chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
+    chk_res = cur.execute(chk).fetchall()
+    if len(chk_res)==0: 
+        print("Table %s_courses not found, please upload..." % dept)
+        sys.exit()
+    return cur
 
 def update_dept_cdesc(dept, sheet):
     #use like this: update_dept_cdesc('ee', wb.get_sheet_by_name("course-descriptions"))
@@ -77,9 +112,9 @@ def update_dept_cdesc(dept, sheet):
         chk_res = cur.execute(chk, [r[1].value]).fetchall()
         if len(chk_res)==0:
             try:
-                cur.execute(ins, [r[0].value, r[1].value.upper(), capitals(r[2].value).replace('&', 'and').strip(), 
-                    float(r[3].value), r[4].value, r[5].value, r[6].value,
-                    r[7].value, r[8].value])
+                sem, c, n, cd, seg, pre, syl, rem, g_rem = [r[i].value for i in range(9)] 
+                c, n, cd, seg, pre, syl = sanitize(c, n, cd, seg, pre, syl)
+                cur.execute(ins, [sem, c, n, cd, seg, pre, syl, rem, g_rem])
             except Exception as e: 
                 print(r, r[1].value, r[2].value)
                 print(e)
@@ -134,20 +169,14 @@ def gen_course_description(dept):
     table_pre = "\\columnratio{0.25} \\setlength{\\columnsep}{1em} \\begin{paracol}{2}"
     print(table_pre)
     row_style = "\\describe{%s}{%s}{%s}{%s} \\switchcolumn \\vspace{0mm} \\syllabus{%s} \\switchcolumn[0]*"
-    q = """SELECT code, credits, segments, name, syllabus, pre_req FROM %s_courses""" % dept
+    q = """SELECT code, name, credits, segments, pre_req, syllabus FROM %s_courses""" % dept
     rows = cur.execute(q).fetchall()
     for row in rows: 
-        code, credits, segments, name, syl, pre_req = row
-        code = code.replace(' ', '').upper()
+        code, name, credits, segments, pre_req, syl = row
+        code, name, credits, segments, pre_req, syl = sanitize(code, name, credits, segments, pre_req, syl)
         credits = Decimal(credits)
         if code[2:] == 'XXXX': continue
-        if segments == None or segments == 'None': segments = ''
-        try: name = capitals(name).replace('&', 'and')
-        except: pass
-        if pre_req == None or pre_req == 'None': pre_req = ''
-        else: pre_req = pre_req.replace('&', 'and')
-        #if syl in not None: syl = syl.replace('\\', '').replace('&', 'and')
-        if syl is not None: syl = syl.replace('&', 'and').replace('\\', '') #'\\textbackslash ')
+        if pre_req != None and pre_req != '': pre_req = "\\triangleright "+pre_req
         print(row_style % (code, credits, name, pre_req, syl))
     table_post = "\\end{paracol}"
     print(table_post)
@@ -204,7 +233,7 @@ def gen_curriculum(dept, sheet, title, display_seg=True):
     #row_style = "\\currformat{%s}{%s}{%s}{\\colorbox{lightgreen}{\\framebox(100,2){\\tiny{\\hspace{1cm}%s\\hspace{1cm}}}}}"
     row_style1 = "\\surrformat{%s}{%s}{%s}"
 
-    q = """SELECT credits, segments, name FROM %s_courses WHERE code='%s'"""
+    q = """SELECT name, credits, segments FROM %s_courses WHERE code='%s'"""
     g_remarks = ''
     sem, t1, t2 = None, Decimal(0), Decimal(0) # t1 = total credits, t2 = credits for a semester.
     for r in sheet.iter_rows(min_row=2):
@@ -217,24 +246,20 @@ def gen_curriculum(dept, sheet, title, display_seg=True):
             if sem != None: 
                 if display_seg: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & & \\\\" % sem)
                 else: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & \\\\" % sem)
-        code = r[1].value.replace(' ', '').upper()
+        code = r[1].value
         dept = code[:2].upper()
         #print(code, dept)
-        if code[2:] == 'XXXX':
-            credits, segments, name = r[3].value, r[4].value, r[2].value
-        else:
-            try: credits, segments, name = cur.execute(q % (dept, code)).fetchall()[0]
-            except: 
-                #print(r[3].value, r[4].value, r[2].value)
-                credits, segments, name = r[3].value, r[4].value, r[2].value
-        try: credits = Decimal(credits)
-        except: credits = Decimal(1)
-        try: name = capitals(name).replace('&', 'and')
-        except: pass
-        segments = str(segments).strip()
+        if code[2:] == 'XXXX': name, credits, segments = r[2].value, r[3].value, r[4].value
+        else: 
+            try: name, credits, segments = cur.execute(q % (dept, code)).fetchall()[0]
+            except: name, credits, segments = r[2].value, r[3].value, r[4].value
+        #print(code, name, credits, segments)
+        code, name, credits, segments, pre_req, syl = sanitize(code, name, credits, segments, '', '')
+        credits = Decimal(credits)
+        #segments = str(segments).strip()
+        #if segments == None or segments == 'None': segments = ''
         t1 += credits
         t2 += credits
-        if segments == None or segments == 'None': segments = ''
         #print(row_style % (code, name.title(), credits, segments))
         if display_seg: 
             tbox = get_segment_line(segments)
