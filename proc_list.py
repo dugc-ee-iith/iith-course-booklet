@@ -55,3 +55,7 @@ ug_plist = [
 ['./data/UG/MS-BTech.xlsx', ['curriculum', 'baskets', 'minor', 'honors', 'double-major']]
 ]
 ug_plist.sort()
+
+basedatadir = './data/Course Booklet 2019/'
+depts = sorted(['AI', 'BM', 'CS', 'EE', 'ME', 'CH', 'BO', 'CE', 'CY', 'DS', 'ES', 'LA', 'MA', 'MS', 'PH'])
+

@@ -67,8 +67,8 @@ def sanitize(code, name, credits, segments, pre_req, syl):
     if syl is not None: syl = syl.replace('&', 'and').replace('\\\\ [', '[') #tex_escape(tex_escape(syl))
     return code, name, credits, segments, pre_req, syl
 
-def get_course_db(dept):
-    con = sqlite3.connect('./courses.db')
+def get_course_db(dept, level):
+    con = sqlite3.connect('./courses_'+level+'.db')
     cur = con.cursor()
     #check if it is in the db already
     if dept=='EP': dept = 'PH'
@@ -79,9 +79,9 @@ def get_course_db(dept):
         sys.exit()
     return cur
 
-def update_dept_cdesc(dept, sheet):
+def update_dept_cdesc(dept, sheet, level):
     #use like this: update_dept_cdesc('ee', wb.get_sheet_by_name("course-descriptions"))
-    con = sqlite3.connect('./courses.db')
+    con = sqlite3.connect('./courses_'+level+'.db')
     cur = con.cursor()
     #check if it is in the db already
     chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
@@ -116,8 +116,8 @@ def update_dept_cdesc(dept, sheet):
                 c, n, cd, seg, pre, syl = sanitize(c, n, cd, seg, pre, syl)
                 cur.execute(ins, [sem, c, n, cd, seg, pre, syl, rem, g_rem])
             except Exception as e: 
-                print(r, r[1].value, r[2].value)
-                print(e)
+                print(e, str(r[1].value), r[1])
+                if str(r[1].value)=='None': break # stop when a blank course code encountered.
     con.commit()
     con.close()
 
@@ -159,13 +159,13 @@ def csv2latex():
     print(table_post)
     print("".join(post))
 
-def gen_course_description(dept):
+def gen_course_description(dept, level):
     #pre = open("./parts/pre_descr_table.tex").readlines()
     #post = open("./parts/post_descr_table.tex").readlines()
     #print("".join(pre))
-    cur = get_course_db(dept)
+    cur = get_course_db(dept, level)
     print("""\\newpage""")
-    print("""\\textbf{%s} Course Description""" % dept)
+    print("""\\textbf{%s} %s Course Description""" % (dept, level.upper()))
     table_pre = "\\columnratio{0.25} \\setlength{\\columnsep}{1em} \\begin{paracol}{2}"
     print(table_pre)
     row_style = "\\describe{%s}{%s}{%s}{%s} \\switchcolumn \\vspace{0mm} \\syllabus{%s} \\switchcolumn[0]*"
@@ -203,11 +203,11 @@ def get_segment_line(seg):
                 seg_dict['blank'] = "{\\tiny{%s}}"
                 return seg_dict['blank']
 
-def gen_curriculum(dept, sheet, title, display_seg=True):
+def gen_curriculum(dept, sheet, title, level, display_seg=True):
     #pre = open("./parts/pre_curr_table.tex").readlines()
     #post = open("./parts/post_curr_table.tex").readlines()
     #print("".join(pre))
-    cur = get_course_db(dept)
+    cur = get_course_db(dept, level)
     #table_pre = "\\begin{longtable}{@{}llll@{}} \
     #\\textcolor{Grey}{\\textbf{Course Code}} & \\textcolor{Grey}{\\textbf{Course Name}} & \
     #\\textcolor{Grey}{\\textbf{Credits}} & \\textcolor{Grey}{\\textbf{Segments}} \\\\ \
@@ -216,7 +216,8 @@ def gen_curriculum(dept, sheet, title, display_seg=True):
     #table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \\begin{longtable}{@{\extracolsep{\\fill}}rlll@{}}
     
     #print("\\hspace{-1cm}")
-    print("""\\textbf{%s %s}"""%(deptname, title))
+    print("""\\newpage""")
+    print("""\\textbf{%s %s}"""%(dept, title))
     #table_pre = """\\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
     table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \n \\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
             \\textcolor{Grey}{\\textbf{Cred.}} & \\textcolor{Grey}{\\textbf{Code}} & \
@@ -234,7 +235,7 @@ def gen_curriculum(dept, sheet, title, display_seg=True):
     row_style1 = "\\surrformat{%s}{%s}{%s}"
 
     q = """SELECT name, credits, segments FROM %s_courses WHERE code='%s'"""
-    g_remarks = ''
+    g_remarks = []
     sem, t1, t2 = None, Decimal(0), Decimal(0) # t1 = total credits, t2 = credits for a semester.
     for r in sheet.iter_rows(min_row=2):
         if sem != r[0].value:
@@ -247,6 +248,7 @@ def gen_curriculum(dept, sheet, title, display_seg=True):
                 if display_seg: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & & \\\\" % sem)
                 else: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & \\\\" % sem)
         code = r[1].value
+        if str(r[1].value)=='None': break # stop when a blank course code encountered.
         dept = code[:2].upper()
         #print(code, dept)
         if code[2:] == 'XXXX': name, credits, segments = r[2].value, r[3].value, r[4].value
@@ -265,12 +267,16 @@ def gen_curriculum(dept, sheet, title, display_seg=True):
             tbox = get_segment_line(segments)
             print((row_style+tbox) % (credits, code, name, segments))
         else: print(row_style1 % (credits, code, name))
-        if r[6].value != None: g_remarks += r[6].value
+        if r[6].value != None: g_remarks.append(r[6].value)
     if t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
     #print("\\textbf{%d} & Grand Total & \\\\"%t1)
     table_post = "\\hline \\end{longtable}"
     print(table_post)
-    print(g_remarks+" \n")
+    if len(g_remarks) != 0:
+        print("\\begin{itemize}\n")
+        for x in g_remarks: print("\\item %s\n" % x.replace('&', 'and'))
+        print("\\end{itemize}\n")
+    #print(g_remarks.replace('&', 'and') +" \n")
     print("""\\vspace{6mm}""")
     #print("".join(post))
 
@@ -279,14 +285,28 @@ def print_part(f): print(''.join(open(f).readlines()))
 import sys
 if __name__ == "__main__":
     def get_deptname(f): return f.split('-')[0].split('/')[-1].upper()
+
+    import proc_list
+    def update_dept(dept, level):
+        fname = proc_list.basedatadir + dept+'_'+level.upper()+'_CourseDescription.xlsx'
+        wb = load_workbook(fname)
+        desc = wb.get_sheet_by_name("course-descriptions")
+        update_dept_cdesc(dept, desc, level)
+    def print_level_curr(dept, level):
+        fname = proc_list.basedatadir + dept+'_'+level.upper()+'_Curriculum.xlsx'
+        wb = load_workbook(fname)
+        for s in wb.sheetnames:
+            sheet = wb.get_sheet_by_name(s)
+            disp_seg = False
+            if s[:4] == 'curr': disp_seg = True
+            gen_curriculum(dept, sheet, s.capitalize(), level, display_seg=disp_seg)
+        gen_course_description(dept, level)
+        
     if len(sys.argv) > 1:
         if sys.argv[1] == "update":
-            for x in course_details_filelist:
-                #print(x)
-                deptname = get_deptname(x) 
-                wb = load_workbook(x)
-                desc = wb.get_sheet_by_name("course-descriptions")
-                update_dept_cdesc(deptname, desc)
+            for d in [sys.argv[2]]: #proc_list.depts
+                update_dept(d, sys.argv[3]) 
+
         elif sys.argv[1] == "print-doc":
             print_part('./parts/pre-doc.tex')
             print("\\chapter*{2 B.Tech Course Curriclum}\\stepcounter{chapter}\\addcontentsline{toc}{chapter}{2 B.Tech Course Curriculum}")
@@ -306,17 +326,8 @@ if __name__ == "__main__":
         elif sys.argv[1] == "print-one":
             # prints for one department that is at front in ug_plist
             print_part('./parts/pre-doc.tex')
-            import proc_list
-            for i in [1]:
-                f = proc_list.ug_plist[0]
-                deptname = get_deptname(f[0]) 
-                wb = load_workbook(f[0])
-                for s in f[1]:
-                    sheet = wb.get_sheet_by_name(s)
-                    disp_seg = False
-                    if s[:4] == 'curr': disp_seg = True
-                    gen_curriculum(deptname, sheet, s.capitalize(), display_seg=disp_seg)
-                gen_course_description(deptname)
+            for d in [sys.argv[2]]: #proc_list.depts
+                print_level_curr(d, sys.argv[3]) 
             print_part('./parts/post-doc.tex')
             
     

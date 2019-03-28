@@ -1,0 +1,10 @@
+
+for i in 'AI' 'BM' 'CS' 'EE' 'ME' 'CH' 'BO' 'CE' 'CY' 'DS' 'ES' 'LA' 'MA' 'MS' 'PH'
+do
+    for j in 'ug' 'pg'
+    do
+        python3 ./main.py print-one $i $j > ${i}_${j}.tex
+        lualatex ${i}_${j}.tex
+    done
+done
+

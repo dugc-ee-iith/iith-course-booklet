@@ -1,0 +1,14 @@
+to do:
+
+- for each department generate two files: UG/ PG
+- each of the files will have course curriculum on separate pages and ends with course description
+
+to generate curricula read each of the sheets from the excel files.
+
+
+issues
+- CSXXXX appears in course desc.
+- curriculum sheets which are not used delete
+- pg course curriculem MDS sheet is not in proper format.
+- sheet names should not have dept names, please use whatever name you want to put in title
+
