@@ -12,3 +12,28 @@ issues
 - pg course curriculem MDS sheet is not in proper format.
 - sheet names should not have dept names, please use whatever name you want to put in title
 
+
+- MS PG course description doesn't have semester column
+
+- ME UG curriculum sheet: use Semester column in all sheets, delete sheets which don't have any data,
+  double major sheet - remarks should be split and copied in each row.
+
+- CH basket selection specifications in different format, use semester in all sheets.
+
+-BO don't use "&" anywhere
+
+- CE: use semester as first column in all sheets, do not use merged cells, use remarks
+  for specifying specialisation
+  dont use a blank code use CEXXXX instead. basket specification in remarks. dont use "&"
+  anywhere.
+
+- DS: use same format for basket and put basket name in remarks
+  delete unused sheets
+
+- LA: use semester column
+
+- MA: use semester column. there is problem in course descritpion near "representation theorem for"
+  (latex problem)
+
+- MS: MS3290 csystallography-i is not listed
+

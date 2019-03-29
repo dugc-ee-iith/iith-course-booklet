@@ -5,6 +5,7 @@ do
     do
         python3 ./main.py print-one $i $j > ${i}_${j}.tex
         lualatex ${i}_${j}.tex
+        lualatex ${i}_${j}.tex
     done
 done
 

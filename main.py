@@ -70,6 +70,7 @@ def sanitize(code, name, credits, segments, pre_req, syl):
 def get_course_db(dept, level):
     con = sqlite3.connect('./courses_'+level+'.db')
     cur = con.cursor()
+    return cur
     #check if it is in the db already
     if dept=='EP': dept = 'PH'
     chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
@@ -163,6 +164,7 @@ def gen_course_description(dept, level):
     #pre = open("./parts/pre_descr_table.tex").readlines()
     #post = open("./parts/post_descr_table.tex").readlines()
     #print("".join(pre))
+    if dept.upper()=='AI' or dept.upper()=='ES': return
     cur = get_course_db(dept, level)
     print("""\\newpage""")
     print("""\\textbf{%s} %s Course Description""" % (dept, level.upper()))
@@ -236,17 +238,35 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
 
     q = """SELECT name, credits, segments FROM %s_courses WHERE code='%s'"""
     g_remarks = []
+    remarks, rem_tex = [], ''
     sem, t1, t2 = None, Decimal(0), Decimal(0) # t1 = total credits, t2 = credits for a semester.
     for r in sheet.iter_rows(min_row=2):
         if sem != r[0].value:
             if sem != None:
-                if display_seg: print("\\textbf{%s} & Total & \\\\"%t2)
-                else: print("\\textbf{%s} & Total \\\\"%t2)
+                if display_seg: print("\\textbf{%s} & Total & \\\\"%int(t2))
+                else: print("\\textbf{%s} & Total \\\\"%int(t2))
             t1 += t2
-            sem, t2 = r[0].value, Decimal(0)
+            sem = r[0].value
+            sem1 = None
+            if type(r[0].value)==type(1.0): sem1 = str(int(r[0].value))
+            else: sem1 = r[0].value
+            t2 = Decimal(0)
             if sem != None: 
-                if display_seg: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & & \\\\" % sem)
-                else: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & \\\\" % sem)
+                if display_seg: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & & \\\\" % sem1)
+                else: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & \\\\" % sem1)
+        rem_tex = ''
+        if str(r[5].value) != 'None':
+            matched = False
+            i = 0
+            for i in range(len(remarks)):
+                if remarks[i]==str(r[5].value): 
+                    matched = True
+                    break
+            if matched: rem_tex = "$^%d$"%(i+1)
+            else:
+                remarks.append(str(r[5].value))
+                rem_tex = "$^%d$"%(len(remarks))
+            #print(remarks, m, rem_tex)
         code = r[1].value
         if str(r[1].value)=='None': break # stop when a blank course code encountered.
         dept = code[:2].upper()
@@ -265,15 +285,20 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
         #print(row_style % (code, name.title(), credits, segments))
         if display_seg: 
             tbox = get_segment_line(segments)
-            print((row_style+tbox) % (credits, code, name, segments))
-        else: print(row_style1 % (credits, code, name))
+            print((row_style+tbox) % (credits, code+rem_tex, name, segments))
+        else: print(row_style1 % (credits, code+rem_tex, name))
         if r[6].value != None: g_remarks.append(r[6].value)
     if t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
     #print("\\textbf{%d} & Grand Total & \\\\"%t1)
     table_post = "\\hline \\end{longtable}"
     print(table_post)
+    if len(remarks) != 0:
+        print("%remarks\n\\begin{footnotesize} \\begin{enumerate}\n")
+        for i in range(len(remarks)):
+            print("\\item %s\n" %(remarks[i]))
+        print("\\end{enumerate}\n \end{footnotesize} ")
     if len(g_remarks) != 0:
-        print("\\begin{itemize}\n")
+        print("%global remarks\n\\begin{itemize}\n")
         for x in g_remarks: print("\\item %s\n" % x.replace('&', 'and'))
         print("\\end{itemize}\n")
     #print(g_remarks.replace('&', 'and') +" \n")
