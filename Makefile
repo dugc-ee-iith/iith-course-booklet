@@ -4,4 +4,4 @@ test:main.py styles/*.sty
 	lualatex test.tex
 
 clean:
-	rm test.pdf test.log test.aux 
+	rm *.log *.out *.toc *.pdf *.aux

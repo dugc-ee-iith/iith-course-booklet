@@ -164,14 +164,17 @@ def gen_course_description(dept, level):
     #pre = open("./parts/pre_descr_table.tex").readlines()
     #post = open("./parts/post_descr_table.tex").readlines()
     #print("".join(pre))
+    
     if dept.upper()=='AI' or dept.upper()=='ES': return
     cur = get_course_db(dept, level)
-    print("""\\newpage""")
-    print("""\\textbf{%s} %s Course Description""" % (dept, level.upper()))
+    chap_str = "%s %s Course Description"%(dept, level)
+    print("\\chaptertitle{%s}"%chap_str)
+    #print("""\\newpage""")
+    #print("""\\textbf{%s} %s Course Description""" % (dept, level.upper()))
     table_pre = "\\columnratio{0.25} \\setlength{\\columnsep}{1em} \\begin{paracol}{2}"
     print(table_pre)
     row_style = "\\describe{%s}{%s}{%s}{%s} \\switchcolumn \\vspace{0mm} \\syllabus{%s} \\switchcolumn[0]*"
-    q = """SELECT code, name, credits, segments, pre_req, syllabus FROM %s_courses""" % dept
+    q = """SELECT code, name, credits, segments, pre_req, syllabus FROM %s_courses ORDER BY code""" % dept
     rows = cur.execute(q).fetchall()
     for row in rows: 
         code, name, credits, segments, pre_req, syl = row
@@ -218,8 +221,8 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     #table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \\begin{longtable}{@{\extracolsep{\\fill}}rlll@{}}
     
     #print("\\hspace{-1cm}")
-    print("""\\newpage""")
-    print("""\\textbf{%s %s}"""%(dept, title))
+    #print("""\\vspace{1cm}""")
+    print("""\\section{%s %s}"""%(dept, title))
     #table_pre = """\\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
     table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \n \\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
             \\textcolor{Grey}{\\textbf{Cred.}} & \\textcolor{Grey}{\\textbf{Code}} & \
@@ -239,12 +242,18 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     q = """SELECT name, credits, segments FROM %s_courses WHERE code='%s'"""
     g_remarks = []
     remarks, rem_tex = [], ''
-    sem, t1, t2 = None, Decimal(0), Decimal(0) # t1 = total credits, t2 = credits for a semester.
+    sem, t1, t2 = None, Decimal(0), Decimal(0)
+    # t1 = total credits, t2 = credits for a semester, gt=total at the end
+    sem_str = sheet['A1'].value
     for r in sheet.iter_rows(min_row=2):
         if sem != r[0].value:
             if sem != None:
-                if display_seg: print("\\textbf{%s} & Total & \\\\"%int(t2))
-                else: print("\\textbf{%s} & Total \\\\"%int(t2))
+                if display_seg: 
+                    print("\\textbf{%s} & Total & \\\\"%int(t2))
+                    print(" & & & \\\\")
+                else:
+                    print("\\textbf{%s} & Total \\\\"%int(t2))
+                    print(" & & \\\\")
             t1 += t2
             sem = r[0].value
             sem1 = None
@@ -252,8 +261,8 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
             else: sem1 = r[0].value
             t2 = Decimal(0)
             if sem != None: 
-                if display_seg: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & & \\\\" % sem1)
-                else: print(" \\multicolumn{2}{l}{\\textbf{Semester %s}} & \\\\" % sem1)
+                if display_seg: print(" \\multicolumn{2}{l}{\\textbf{%s %s}} & & \\\\" % (sem_str, sem1))
+                else: print(" \\multicolumn{2}{l}{\\textbf{%s %s}} & \\\\" % (sem_str, sem1))
         rem_tex = ''
         if str(r[5].value) != 'None':
             matched = False
@@ -288,10 +297,9 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
             print((row_style+tbox) % (credits, code+rem_tex, name, segments))
         else: print(row_style1 % (credits, code+rem_tex, name))
         if r[6].value != None: g_remarks.append(r[6].value)
-    if t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
-    #print("\\textbf{%d} & Grand Total & \\\\"%t1)
-    table_post = "\\hline \\end{longtable}"
-    print(table_post)
+    if sem_str[:2].lower()!='ba' and t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
+    if sem_str[:2].lower()!='ba': print("\\hline \\textbf{%d} & Grand Total & \\\\ \\end{longtable}"%t1)
+    else: print("\\hline \\\\ \\end{longtable}")
     if len(remarks) != 0:
         print("%remarks\n\\begin{footnotesize} \\begin{enumerate}\n")
         for i in range(len(remarks)):
@@ -351,8 +359,13 @@ if __name__ == "__main__":
         elif sys.argv[1] == "print-one":
             # prints for one department that is at front in ug_plist
             print_part('./parts/pre-doc.tex')
-            for d in [sys.argv[2]]: #proc_list.depts
-                print_level_curr(d, sys.argv[3]) 
+            dept = sys.argv[2]
+            level = sys.argv[3]
+            chap_str = "%s %s Curriculum"%(dept, level)
+            print("\\chaptertitle{%s}"%chap_str)
+            #print("\\chapter*{\\thechapter\\hspace{3mm} %s}\\stepcounter{chapter}\\addcontentsline{toc}{chapter}{\\thechapter\\hspace{3mm} %s}"%(chap_str, chap_str))
+            for d in [dept]: #proc_list.depts
+                print_level_curr(d, level) 
             print_part('./parts/post-doc.tex')
             
     

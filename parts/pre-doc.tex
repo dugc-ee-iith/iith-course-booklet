@@ -70,6 +70,10 @@
 \author{}
 \date{}
 
+\newcommand{\chaptertitle}[1]{
+    \stepcounter{chapter}
+    \chapter*{\thechapter\hspace{3mm}#1}\addcontentsline{toc}{chapter}{\thechapter\hspace{3mm}#1}
+}
 
 \begin{document}
 
@@ -80,7 +84,8 @@
 \let\cleardoublepage\clearpage
 \tableofcontents
 \endgroup
-\chapter*{1 Introduction}\stepcounter{chapter}\addcontentsline{toc}{chapter}{1 Introduction}
+\chaptertitle{Introduction}
 \input{./parts/booklet-intro}
 
+\newpage
 
