@@ -1,30 +1,19 @@
-#import xlrd
 import json
 import csv
 from decimal import Decimal
-
-from os import walk
-course_details_filelist = ['./data/UG/'+y for y in [x[2] for x in walk('./data/UG')][0]]
-UG_curr = ['./data/UG/'+y for y in [x[2] for x in walk('./data/UG')][0]]
-M1yr_curr = ['./data/PG/MTech-1yr/'+y for y in [x[2] for x in walk('./data/PG/MTech-1yr')][0]]
-M2yr_curr = ['./data/PG/MTech-2yr/'+y for y in [x[2] for x in walk('./data/PG/MTech-2yr')][0]]
-M3yr_curr = ['./data/PG/MTech-3yr/'+y for y in [x[2] for x in walk('./data/PG/MTech-3yr')][0]]
-#print(course_details_filelist)
-
-#book = xlrd.open_workbook('test-dat1.xls')
-#sh1 = book.sheet_by_index(0)
-
-#import pytablewriter as ptw
-#from pytablewriter.style import Style
 from openpyxl import load_workbook
 import sqlite3
 
+#from os import walk
+#course_details_filelist = ['./data/UG/'+y for y in [x[2] for x in walk('./data/UG')][0]]
+#print(course_details_filelist)
 
 no_cap_list = ['CS', 'CY', 'II', 'in', 'and', '2d', 'for', 'a', 'HT', 'MT', 
         'is', 'of', 'to', 'the', 'PH', 'DSP', 'EE', 'LA', 'CA', 'FEM', 'CFD', 'IC',
         'LTE-4G', 'MAC', 'AI', 'ML', 'GIS', '-I', '-II', 'MA', 'BM', 'BO', 'LA/CA', 
         'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS', 'CFT', 'MHD',  ]
 def capitals(s):
+    """capitalize the course titles, skip which are in the no_cap_list."""
     res = ''
     for w in s.split(' '):
         if w not in no_cap_list: w = w.capitalize()
@@ -56,6 +45,7 @@ def tex_escape(text):
     return tex_regex.sub(lambda match: tex_conv[match.group()], text)
 
 def sanitize(code, name, credits, segments, pre_req, syl):
+    """standard formats for items appearing in output"""
     if code is not None: code = code.replace(' ', '').upper().strip()
     if name is not None: name = capitals(name).replace('&', 'and').strip()
     try: credits = float(credits)
@@ -68,6 +58,7 @@ def sanitize(code, name, credits, segments, pre_req, syl):
     return code, name, credits, segments, pre_req, syl
 
 def get_course_db(dept, level):
+    """return sql cursor for dept at level"""
     con = sqlite3.connect('./courses_'+level+'.db')
     cur = con.cursor()
     return cur
@@ -81,15 +72,16 @@ def get_course_db(dept, level):
     return cur
 
 def update_dept_cdesc(dept, sheet, level):
-    #use like this: update_dept_cdesc('ee', wb.get_sheet_by_name("course-descriptions"))
+    """Update the department course db at level. Use like this: 
+    update_dept_cdesc('EE', wb.get_sheet_by_name("course-descriptions"), 'ug')"""
     con = sqlite3.connect('./courses_'+level+'.db')
     cur = con.cursor()
     #check if it is in the db already
     chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
     chk_res = cur.execute(chk).fetchall()
     if len(chk_res)==0: 
+        # if there is no table, then create it.
         print("Table %s_courses not found, creating..." % dept)
-        # create table
         # Code is unique, name is not, as same name can be offered for UG and PG.
         c = """
         CREATE TABLE %s_courses (
@@ -109,7 +101,7 @@ def update_dept_cdesc(dept, sheet, level):
     ins = """INSERT INTO %s_courses (semester, code, name, credits, segments, pre_req, 
             syllabus, remarks, global_remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""" % dept
     chk = """SELECT code FROM %s_courses WHERE code = ?;""" % dept
-    for r in sheet.iter_rows(min_row=2):
+    for r in sheet.iter_rows(min_row=2):# first row contains headings.
         chk_res = cur.execute(chk, [r[1].value]).fetchall()
         if len(chk_res)==0:
             try:
@@ -122,7 +114,7 @@ def update_dept_cdesc(dept, sheet, level):
     con.commit()
     con.close()
 
-def csv2latex():
+def csv2latex(): # contains old code, will be removed later.
     pre = open("./styles/descript_pre.sty").readlines()
     post = open("./styles/descript_post.sty").readlines()
     print("".join(pre))
@@ -161,11 +153,11 @@ def csv2latex():
     print("".join(post))
 
 def gen_course_description(dept, level):
+    """course syllabus for dept at level, see describe and syllabus macros in pre-doc.tex"""
     #pre = open("./parts/pre_descr_table.tex").readlines()
     #post = open("./parts/post_descr_table.tex").readlines()
     #print("".join(pre))
-    
-    if dept.upper()=='AI' or dept.upper()=='ES': return
+    if dept.upper()=='ES': return
     cur = get_course_db(dept, level)
     chap_str = "%s %s Course Description"%(dept, level)
     print("\\chaptertitle{%s}"%chap_str)
@@ -189,6 +181,8 @@ def gen_course_description(dept, level):
 
 seg_dict = {}
 def get_segment_line(seg):
+    """return latex code for a rounded bar with segment written inside it. The length
+    and starting position of bar is as per segment specification"""
     width = 6
     try: return seg_dict[seg]
     except: 
@@ -209,6 +203,10 @@ def get_segment_line(seg):
                 return seg_dict['blank']
 
 def gen_curriculum(dept, sheet, title, level, display_seg=True):
+    """curriculum for dept at level using a given sheet, with title taken from sheet name.
+    displays a segment column if asked. 
+    See currformat and surrformat macros for single lines with and w/o display-seg in pre-doc.tex.
+    Course credits range is not supported at the moment."""
     #pre = open("./parts/pre_curr_table.tex").readlines()
     #post = open("./parts/post_curr_table.tex").readlines()
     #print("".join(pre))
@@ -337,10 +335,12 @@ if __name__ == "__main__":
         
     if len(sys.argv) > 1:
         if sys.argv[1] == "update":
+            #updates course database of given department: python3 main.py CS ug
             for d in [sys.argv[2]]: #proc_list.depts
                 update_dept(d, sys.argv[3]) 
 
         elif sys.argv[1] == "print-doc":
+            # prints whole doc: python3 main.py print-doc
             print_part('./parts/pre-doc.tex')
             print("\\chapter*{2 B.Tech Course Curriclum}\\stepcounter{chapter}\\addcontentsline{toc}{chapter}{2 B.Tech Course Curriculum}")
             import proc_list
@@ -357,7 +357,7 @@ if __name__ == "__main__":
                 gen_course_description(deptname)
             print_part('./parts/post-doc.tex')
         elif sys.argv[1] == "print-one":
-            # prints for one department that is at front in ug_plist
+            # prints single dept at a level: python3 main.py print-one CS ug
             print_part('./parts/pre-doc.tex')
             dept = sys.argv[2]
             level = sys.argv[3]
