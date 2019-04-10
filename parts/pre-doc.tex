@@ -75,16 +75,31 @@
     \chapter*{\thechapter\hspace{3mm}#1}\addcontentsline{toc}{chapter}{\thechapter\hspace{3mm}#1}
 }
 
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+\fancyhead{} % clear all header fields
+\fancyhead[RO]{\emph{\rightmark}}
+\fancyhead[LE]{\emph{\leftmark}}
+\fancyfoot[LE,RO]{\thepage}
+%\fancyhead[LE,RO]{\rightmark}
+%\fancyfoot[RE,LO]{\leftmark}
+%\fancyfoot[LE,RO]{\thepage}
+
+
 \begin{document}
 
 %\maketitle
 
-\input{./parts/director-message}
+%\input{./parts/director-message}  Removed as per discussion
 \begingroup
 \let\cleardoublepage\clearpage
 \tableofcontents
 \endgroup
-\chaptertitle{Introduction}
+%\chaptertitle{Introduction}
+\chapter{Introduction}
 \input{./parts/booklet-intro}
 
 \newpage

@@ -3,6 +3,7 @@ for i in 'AI' 'BM' 'CS' 'EE' 'ME' 'CH' 'BO' 'CE' 'CY' 'DS' 'ES' 'LA' 'MA' 'MS' '
 do
     for j in 'ug' 'pg'
     do
+        echo "Updating $i $j"
         python3 ./main.py update $i $j
     done
 done

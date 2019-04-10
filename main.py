@@ -8,10 +8,10 @@ import sqlite3
 #course_details_filelist = ['./data/UG/'+y for y in [x[2] for x in walk('./data/UG')][0]]
 #print(course_details_filelist)
 
-no_cap_list = ['CS', 'CY', 'II', 'in', 'and', '2d', 'for', 'a', 'HT', 'MT', 
+no_cap_list = ['ME', 'CS', 'MTech', 'PhD', 'MDS', 'CY', 'II', 'III', 'in', 'and', '2d', 'for', 'a', 'HT', 'MT', 
         'is', 'of', 'to', 'the', 'PH', 'DSP', 'EE', 'LA', 'CA', 'FEM', 'CFD', 'IC',
         'LTE-4G', 'MAC', 'AI', 'ML', 'GIS', '-I', '-II', 'MA', 'BM', 'BO', 'LA/CA', 
-        'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS', 'CFT', 'MHD',  ]
+        'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS', 'CFT', 'MHD', 'FES', 'ACM', 'MAD', 'IDM' ]
 def capitals(s):
     """capitalize the course titles, skip which are in the no_cap_list."""
     res = ''
@@ -57,110 +57,78 @@ def sanitize(code, name, credits, segments, pre_req, syl):
     if syl is not None: syl = syl.replace('&', 'and').replace('\\\\ [', '[') #tex_escape(tex_escape(syl))
     return code, name, credits, segments, pre_req, syl
 
-def get_course_db(dept, level):
-    """return sql cursor for dept at level"""
+def get_course_db(level):
     con = sqlite3.connect('./courses_'+level+'.db')
     cur = con.cursor()
     return cur
     #check if it is in the db already
-    if dept=='EP': dept = 'PH'
-    chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
-    chk_res = cur.execute(chk).fetchall()
-    if len(chk_res)==0: 
-        print("Table %s_courses not found, please upload..." % dept)
-        sys.exit()
-    return cur
+    #if dept=='EP': dept = 'PH'
+    #chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
+    #chk_res = cur.execute(chk).fetchall()
+    #if len(chk_res)==0: 
+    #    print("Table %s_courses not found, please upload..." % dept)
+    #    sys.exit()
+    #return cur
 
 def update_dept_cdesc(dept, sheet, level):
     """Update the department course db at level. Use like this: 
-    update_dept_cdesc('EE', wb.get_sheet_by_name("course-descriptions"), 'ug')"""
-    con = sqlite3.connect('./courses_'+level+'.db')
+    update_dept_cdesc('EE', wb.get_sheet_by_name("course-descriptions"), 'ug').
+    First checks if dept sheet exist in db, if not then create it.
+    Then courses are read from excel file (EE_Course_Descriptions.xlsx) and 
+    inserted in either EE or ID tables. Course is overwritten if already
+    exists."""
+    def chk_dept(cur, dept):
+        chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
+        chk_res = cur.execute(chk).fetchall()
+        if len(chk_res)==0: 
+            # if there is no table, then create it.
+            print("Table %s_courses not found, creating..." % dept)
+            # Code is unique, name is not, as same name can be offered for UG and PG.
+            c = """
+            CREATE TABLE %s_courses (
+            code           STRING  PRIMARY KEY UNIQUE NOT NULL,
+            name           STRING  NOT NULL,
+            credits        float NOT NULL,
+            semester       INTEGER,
+            pre_req        STRING,
+            syllabus       TEXT,
+            segments       STRING,
+            remarks        TEXT,
+            global_remarks TEXT
+            );""" % dept
+            cur.execute(c)
+
+    con = sqlite3.connect('./courses_'+level.upper()+'.db')
     cur = con.cursor()
     #check if it is in the db already
-    chk = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s_courses';""" % dept
-    chk_res = cur.execute(chk).fetchall()
-    if len(chk_res)==0: 
-        # if there is no table, then create it.
-        print("Table %s_courses not found, creating..." % dept)
-        # Code is unique, name is not, as same name can be offered for UG and PG.
-        c = """
-        CREATE TABLE %s_courses (
-        code           STRING  PRIMARY KEY UNIQUE NOT NULL,
-        name           STRING  NOT NULL,
-        credits        float NOT NULL,
-        semester       INTEGER,
-        pre_req        STRING,
-        syllabus       TEXT,
-        segments       STRING,
-        remarks        TEXT,
-        global_remarks TEXT
-        );""" % dept
-        cur.execute(c)
-        con.commit()
+    chk_dept(cur, dept)
+    chk_dept(cur, 'ID')
+    con.commit()
     
-    ins = """INSERT INTO %s_courses (semester, code, name, credits, segments, pre_req, 
+    d_ins = """INSERT OR REPLACE INTO %s_courses (semester, code, name, credits, segments, pre_req, 
             syllabus, remarks, global_remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""" % dept
-    chk = """SELECT code FROM %s_courses WHERE code = ?;""" % dept
+    id_ins = """INSERT OR REPLACE INTO %s_courses (semester, code, name, credits, segments, pre_req, 
+            syllabus, remarks, global_remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""" % 'ID'
     for r in sheet.iter_rows(min_row=2):# first row contains headings.
-        chk_res = cur.execute(chk, [r[1].value]).fetchall()
-        if len(chk_res)==0:
-            try:
-                sem, c, n, cd, seg, pre, syl, rem, g_rem = [r[i].value for i in range(9)] 
-                c, n, cd, seg, pre, syl = sanitize(c, n, cd, seg, pre, syl)
-                cur.execute(ins, [sem, c, n, cd, seg, pre, syl, rem, g_rem])
-            except Exception as e: 
-                print(e, str(r[1].value), r[1])
-                if str(r[1].value)=='None': break # stop when a blank course code encountered.
+        try:
+            sem, c, n, cd, seg, pre, syl, rem, g_rem = [r[i].value for i in range(9)] 
+            ins_str = id_ins if c[:2]=='ID' else d_ins
+            c, n, cd, seg, pre, syl = sanitize(c, n, cd, seg, pre, syl)
+            cur.execute(ins_str, [sem, c, n, cd, seg, pre, syl, rem, g_rem])
+        except Exception as e: 
+            print(e, str(r[1].value), r[1])
+            if str(r[1].value)=='None': break # stop when a blank course code encountered.
     con.commit()
     con.close()
 
-def csv2latex(): # contains old code, will be removed later.
-    pre = open("./styles/descript_pre.sty").readlines()
-    post = open("./styles/descript_post.sty").readlines()
-    print("".join(pre))
-    wb = load_workbook("EE.xlsx")
-    desc = wb.get_sheet_by_name("course-descriptions")
-    
-    ## table environments are probelmatic since they don't break between
-    ## a row. Here we have lots of text in a row, which can overflow a page.
-    #table_pre = "\\begin{table*}\centering \\ra{1.8} \\begin{tabular}{@{}ll@{}} \\toprule"
-    #table_pre = "\\begin{longtable}{@{}ll@{}} \
-    #\\textcolor{Grey}{\\textbf{Course}} & \\textcolor{Grey}{\\textbf{Syllabus}} \\\\ \ 
-    #\\toprule \\endhead"
-    #print(table_pre)
-    #row_style = "\\describe{%s}{%s}{%s}{%s} & \\syllabus{%s} \\\\"
-    ## parcolumns had problem with setting width? 
-    #row_pre = "\\begin {parcolumns}[colwidths={1=0.4\\textwidth,2=0.8\\textwidth}]{2}"
-    #row_style = "\\colchunk{ \\describe{%s}{%s}{%s}{%s} } \\colchunk{ \\syllabus{%s} }"
-    #row_post = "\\end{parcolumns}"
-
-    table_pre = "\\columnratio{0.2} \\setlength{\\columnsep}{1em} \\begin{paracol}{2}"
-    print(table_pre)
-    row_style = "\\describe{%s}{%s}{%s}{%s} \\switchcolumn \\vspace{3mm} \\syllabus{%s} \\switchcolumn[0]*"
-    for r in desc.iter_rows(min_row=2):
-        code, credits, segments, name, syl = r[1].value, r[3].value, r[4].value, r[2].value, r[6].value
-        if segments == None or segments == 'None': segments = ''
-        name = name.replace('&', 'and')
-        syl = syl.replace('\\', '').replace('&', 'and')
-        try: print(row_style % (code, credits, segments, name, syl))
-        except: pass
-    
-    #table_post = "\\bottomrule \\end{tabular} \\end{table*}"
-    #table_post = "\\bottomrule \\end{longtable}"
-    #print(table_post)
-    table_post = "\\end{paracol}"
-    print(table_post)
-    print("".join(post))
-
-def gen_course_description(dept, level):
+def gen_course_description(dept, level, title):
     """course syllabus for dept at level, see describe and syllabus macros in pre-doc.tex"""
     #pre = open("./parts/pre_descr_table.tex").readlines()
     #post = open("./parts/post_descr_table.tex").readlines()
     #print("".join(pre))
     if dept.upper()=='ES': return
-    cur = get_course_db(dept, level)
-    chap_str = "%s %s Course Description"%(dept, level)
-    print("\\chaptertitle{%s}"%chap_str)
+    cur = get_course_db(level)
+    print("\\section{%s}"%title)
     #print("""\\newpage""")
     #print("""\\textbf{%s} %s Course Description""" % (dept, level.upper()))
     table_pre = "\\columnratio{0.25} \\setlength{\\columnsep}{1em} \\begin{paracol}{2}"
@@ -210,7 +178,7 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     #pre = open("./parts/pre_curr_table.tex").readlines()
     #post = open("./parts/post_curr_table.tex").readlines()
     #print("".join(pre))
-    cur = get_course_db(dept, level)
+    cur = get_course_db(level)
     #table_pre = "\\begin{longtable}{@{}llll@{}} \
     #\\textcolor{Grey}{\\textbf{Course Code}} & \\textcolor{Grey}{\\textbf{Course Name}} & \
     #\\textcolor{Grey}{\\textbf{Credits}} & \\textcolor{Grey}{\\textbf{Segments}} \\\\ \
@@ -220,7 +188,7 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     
     #print("\\hspace{-1cm}")
     #print("""\\vspace{1cm}""")
-    print("""\\section{%s %s}"""%(dept, title))
+    print("""\\section{%s}"""%(title))
     #table_pre = """\\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
     table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \n \\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
             \\textcolor{Grey}{\\textbf{Cred.}} & \\textcolor{Grey}{\\textbf{Code}} & \
@@ -243,45 +211,52 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     sem, t1, t2 = None, Decimal(0), Decimal(0)
     # t1 = total credits, t2 = credits for a semester, gt=total at the end
     sem_str = sheet['A1'].value
+    b = 0 # base
+    if sem_str[:3].lower()=='bas': b=1
     for r in sheet.iter_rows(min_row=2):
-        if sem != r[0].value:
+        s = r[0].value
+        if sem != s:
             if sem != None:
-                if display_seg: 
-                    print("\\textbf{%s} & Total & \\\\"%int(t2))
+                if display_seg:
+                    if b==0:print("\\textbf{%s} & Total & \\\\"%int(t2))
                     print(" & & & \\\\")
                 else:
-                    print("\\textbf{%s} & Total \\\\"%int(t2))
+                    if b==0:print("\\textbf{%s} & Total \\\\"%int(t2))
                     print(" & & \\\\")
             t1 += t2
-            sem = r[0].value
+            sem = s
             sem1 = None
-            if type(r[0].value)==type(1.0): sem1 = str(int(r[0].value))
-            else: sem1 = r[0].value
+            if type(s)==type(1.0): sem1 = str(int(s))
+            else: sem1 = s
             t2 = Decimal(0)
             if sem != None: 
-                if display_seg: print(" \\multicolumn{2}{l}{\\textbf{%s %s}} & & \\\\" % (sem_str, sem1))
-                else: print(" \\multicolumn{2}{l}{\\textbf{%s %s}} & \\\\" % (sem_str, sem1))
+                if b==1:# if baskets are there, don't print sem_str
+                    if display_seg: print(" \\multicolumn{2}{l}{\\textbf{%s}} & & \\\\" % (sem1))
+                    else: print(" \\multicolumn{2}{l}{\\textbf{%s}} & \\\\" % (sem1))
+                else:
+                    if display_seg: print(" \\multicolumn{2}{l}{\\textbf{%s %s}} & & \\\\" % (sem_str, sem1))
+                    else: print(" \\multicolumn{2}{l}{\\textbf{%s %s}} & \\\\" % (sem_str, sem1))
         rem_tex = ''
-        if str(r[5].value) != 'None':
+        if str(r[b+5].value) != 'None':
             matched = False
             i = 0
             for i in range(len(remarks)):
-                if remarks[i]==str(r[5].value): 
+                if remarks[i]==str(r[b+5].value): 
                     matched = True
                     break
             if matched: rem_tex = "$^%d$"%(i+1)
             else:
-                remarks.append(str(r[5].value))
+                remarks.append(str(r[b+5].value))
                 rem_tex = "$^%d$"%(len(remarks))
             #print(remarks, m, rem_tex)
-        code = r[1].value
-        if str(r[1].value)=='None': break # stop when a blank course code encountered.
+        code = r[b+1].value
+        if str(r[b+1].value)=='None': break # stop when a blank course code encountered.
         dept = code[:2].upper()
         #print(code, dept)
-        if code[2:] == 'XXXX': name, credits, segments = r[2].value, r[3].value, r[4].value
+        if code[2:] == 'XXXX': name, credits, segments = r[b+2].value, r[b+3].value, r[b+4].value
         else: 
             try: name, credits, segments = cur.execute(q % (dept, code)).fetchall()[0]
-            except: name, credits, segments = r[2].value, r[3].value, r[4].value
+            except: name, credits, segments = r[b+2].value, r[b+3].value, r[b+4].value
         #print(code, name, credits, segments)
         code, name, credits, segments, pre_req, syl = sanitize(code, name, credits, segments, '', '')
         credits = Decimal(credits)
@@ -294,9 +269,11 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
             tbox = get_segment_line(segments)
             print((row_style+tbox) % (credits, code+rem_tex, name, segments))
         else: print(row_style1 % (credits, code+rem_tex, name))
-        if r[6].value != None: g_remarks.append(r[6].value)
-    if sem_str[:2].lower()!='ba' and t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
-    if sem_str[:2].lower()!='ba': print("\\hline \\textbf{%d} & Grand Total & \\\\ \\end{longtable}"%t1)
+        if r[b+6].value != None: g_remarks.append(r[b+6].value)
+    #if sem_str[:2].lower()!='ba' and t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
+    #if sem_str[:2].lower()!='ba': print("\\hline \\textbf{%d} & Grand Total & \\\\ \\end{longtable}"%t1)
+    if b==0 and t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
+    if b==0: print("\\hline \\textbf{%d} & Grand Total & \\\\ \\end{longtable}"%t1)
     else: print("\\hline \\\\ \\end{longtable}")
     if len(remarks) != 0:
         print("%remarks\n\\begin{footnotesize} \\begin{enumerate}\n")
@@ -329,9 +306,9 @@ if __name__ == "__main__":
         for s in wb.sheetnames:
             sheet = wb.get_sheet_by_name(s)
             disp_seg = False
-            if s[:4] == 'curr': disp_seg = True
-            gen_curriculum(dept, sheet, s.capitalize(), level, display_seg=disp_seg)
-        gen_course_description(dept, level)
+            if s[:4] == 'Bach': disp_seg = True
+            gen_curriculum(dept, sheet, capitals(s), level, display_seg=disp_seg)
+        #gen_course_description(dept, level)
         
     if len(sys.argv) > 1:
         if sys.argv[1] == "update":
@@ -356,6 +333,39 @@ if __name__ == "__main__":
                 deptname = get_deptname(f[0]) 
                 gen_course_description(deptname)
             print_part('./parts/post-doc.tex')
+
+        elif sys.argv[1] == "print-all": # same as above, above is not easy to modify, so.
+            print_part('./parts/pre-doc.tex')
+            level = sys.argv[2].upper() 
+            depts = sorted(['CS','ME']) #, 'AI', 'EE', 'ME', 'CH', 'BO', 'CE', 'CY', 'DS', 'ES', 'LA', 'MA', 'MS', 'PH'])
+            dept_prefix = "Department of "
+            depts_expand = {'AI':'Artificial Intelligence', 'BM': 'Biomedical Engineering', 'CS': 'Computer Science and Engineering',
+                    'EE': 'Electrical Engineering', 'ME': 'Mechanical and Aerospace Engineering', 'CH': 'Chemical Engineering',
+                    'BO': 'Biotechnology', 'CE': 'Civil Engineering', 'CY': 'Chemistry', 'DS': 'Design', 
+                    'ES': 'Engineering Science', 'LA': 'Liberal Arts', 'MA': 'Mathematics', 'MS': 'Material Science and Metallurgical Engineering',
+                    'PH': 'Physics'}
+            level_strs = {'UG_curr': "%s Course Curricula - Bachelors",
+                    'PG_curr': "%s Course Curricula - Masters and PhD",
+                    'UG_desc': "Course Descriptions - Bachelors",
+                    'PG_desc': "Course Descriptions - Masters and PhD"}
+            def print_level(level, count):
+                #dcount = count
+                for d in depts:
+                    if level == 'UG' and d in ['BM', 'BO', 'CY']: continue
+                    #chap_title = level_strs[level+'_curr'] % (dcount, dept_prefix+depts_expand[d])
+                    #print("\\chapter*{"+chap_title+"}\\stepcounter{chapter}\\addcontentsline{toc}{chapter}{"+chap_title+"}")
+                    chap_title = level_strs[level+'_curr'] % (dept_prefix+depts_expand[d])
+                    print("\\chapter{"+chap_title+"}") 
+                    print_level_curr(d, level) 
+             
+                chap_title = level_strs[level+'_desc'] 
+                print("\\chapter{"+chap_title+"}") 
+                for d in depts:
+                    sect_title = dept_prefix+depts_expand[d]
+                    gen_course_description(d, level, sect_title)
+            print_level(level, 1)
+            print_part('./parts/post-doc.tex')
+                
         elif sys.argv[1] == "print-one":
             # prints single dept at a level: python3 main.py print-one CS ug
             print_part('./parts/pre-doc.tex')

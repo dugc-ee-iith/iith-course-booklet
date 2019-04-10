@@ -1,26 +1,48 @@
 
-MS_Courses: MS5200 and MS3120 has same name but different codes.
-BT_courses: line 3 was vacant, removed.
-LA_courses:
-    line 70, LA6100 has credits 1+2, which is not converted to 3
-    LA1430, LA1340 both have same name, probably UG courses, should be corrected.
-    LA1470 has no value for credits, have put 1 for now, should be corrected.
-    LA1450 and LA4050 have same name, probably OK, please check.
-CS_courses:
-    Line 31, CSxxxx doesn't have a proper code.
-    CS5290 and CS6220 have same name, probably OK.
-    CS5360 and CS6440 have same name, OK.
-EE:
-    Intro to solar cells code is XXXX
-    Digital Design through Arduino code is XXXX
-CE:
-    Seminar in EWRE CE6007 has 0 credits OK?
-    CE6006 has 0 credits, OK?
-DS:
-    several lines named "Electives" are removed.
+Contents:
+Let us directly jump to the curriculums and course descriptions. Drop the message and nomenclature etc. (we shall have them in a separate booklet).
+-- removed director's message and fractal-pizza image.
 
-Courses with XXXX codes will not be included in the database, please update
-their codes from AIMS. They are also not current courses, so their inclusion
-is not critical at this point.
+The contents for UG and PG can look something like the attached files.
+-- this means that the sections and subsections will be listed in contents
 
+It is good to have all the subheadings also listed in the contents page (looking at that place should also give an indication of all the programs at IITH)
+-- done
+·         
+For your convenience, I have renamed and reorganized all the PG curriculum files in the same order.  
+-- this order is being used.
 
+Everywhere in the contents we shall follow the alphabetical order (also for the course descriptions).
+-- course listing are in alphabetical order, keys can be chosen (e.g. course code or course title)
+-- curriculum listing uses same order as in the excel files provided. Depts can sort their files as desired.
+ 
+
+Other formatting notes:
+
+·         All the depts. clubbed together into single file.
+
+·         Separate colour set for UG and PG.
+
+·         Actually, its not UG and PG. More appropriately, the exact words are “Courses of Study: Bachelors” and “Courses of Study: Masters & PhD”
+
+·Appropriate capitalizing for the headings when they appear in the booklet (for example “AI Ai mtech 3year” as “Artificial Intelligence MTech Three Year”).
+-- done, please bring problems to notice.
+
+In the page header: one side can be title of the booklet like “Courses of Study: Bachelors” and the other side can be section heading.
+-- done
+
+There seems to be some issue with the grand total.
+-- removed grand totals for the baskets. 
+
+BM, BO, CY: There is no course curriculum files for UG for these depts as they do not offer any minors etc. But they will have course description file (means for some elective courses to be listed there). Course descriptions of these depts. missing the UG.
+-- done
+
+Elective baskets in PG curriculums as part of the same list, instead of separate section (CE, ME etc).
+-- done
+
+CE-UG: Electives baskets not appearing… is it because it in in separate PG list? 
+-- done
+
+CS-UG: Name of the CS1234 course?
+
+CY5010 course title too long. 
