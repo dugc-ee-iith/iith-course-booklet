@@ -32,7 +32,7 @@
 \newcommand{\describe}[4]{
     %\begin{minipage}[t]{0.3\linewidth}
     \flushleft{
-        \textcolor{Crimson}{\textbf{\textsc{#1}}} \hspace{3mm} \textcolor{Black}{\textbf{#2}} \newline
+        \textcolor{Blue}{\textbf{\textsc{#1}}} \hspace{3mm} \textcolor{Black}{\textbf{#2}} \newline
         \textcolor{Black}{\small{#3}} \newline
         \textcolor{Grey}{\small{#4}}
     }
@@ -45,13 +45,13 @@
 % macros for curriculum table
 \newcommand{\currformat}[4]{
     %\begin{minipage}[t]{0.3\linewidth}
-    #1 & \textcolor{Crimson}{\textbf{#2}} & #3 & #4 \\
+    \textcolor{Blue}{\textbf{#2}} & #1 & #3 & #4 \\
     %\end{minipage} 
 }
 
 \newcommand{\surrformat}[3]{
     %\begin{minipage}[t]{0.3\linewidth}
-    #1 & \textcolor{Crimson}{\textbf{#2}} & #3 \\
+    \textcolor{Blue}{\textbf{#2}} & #1 & #3 \\
     %\end{minipage} 
 }
 
@@ -74,6 +74,11 @@
     \stepcounter{chapter}
     \chapter*{\thechapter\hspace{3mm}#1}\addcontentsline{toc}{chapter}{\thechapter\hspace{3mm}#1}
 }
+
+\usepackage{titlesec}
+\definecolor{gray75}{gray}{0.75}
+%\newcommand{\hsp}{\hspace{20pt}}
+\titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter \hspace{3mm} \textcolor{gray75}{|} \hspace{3mm} }{0pt}{\Huge\bfseries}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
