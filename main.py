@@ -8,11 +8,12 @@ import sqlite3
 #course_details_filelist = ['./data/UG/'+y for y in [x[2] for x in walk('./data/UG')][0]]
 #print(course_details_filelist)
 
-no_cap_list = ['BTech', 'BDes', 'MDes', 'ME', 'CS', 'MTech', 'PhD', 'MDS', 'CY', 'II', 'III', 'in', 'and', 
-        '2d', 'for', 'a', 'HT', 'MT', 'is', 'of', 'to', 'the', 'PH', 'DSP', 'EE',
+no_cap_list = ['BTech', '2Year', 'SysCon', 'PEPS', 'Micro', '3Year', '2Year', 'BDes', 'MDes', 'ME', 'CS', 
+        'MTech', 'PhD', 'MDS', 'CY', 'II', 'III', 'IV', 'in', 'and', 'to', 
+        '2d', 'for', 'a', 'HT', 'MT', 'is', 'in', 'of', 'to', 'the', 'PH', 'DSP', 'EE',
         'LA', 'CA', 'FEM', 'CFD', 'IC', 'LTE-4G', 'MAC', 'AI', 'ML', 'GIS', '-I',
         '-II', 'MA', 'BM', 'BO', 'LA/CA', 'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS',
-        'CFT', 'MHD', 'FES', 'ACM', 'MAD', 'IDM', 'EWRE', '3Year', 'Geotech' ]
+        'CFT', 'MHD', 'FES', 'ACM', 'MAD', 'IDM', 'EWRE', '3Year', 'Geotech', 'MSc', 'C/C++', 'IoT']
 def capitals(s):
     """capitalize the course titles, skip which are in the no_cap_list."""
     res = ''
@@ -53,7 +54,7 @@ def sanitize(code, name, credits, segments, pre_req, syl):
     except: 
         if credits=='None' or credits==None: credits = Decimal(0)
         pass
-    segments = str(segments).strip()
+    segments = str(segments).strip().split('.')[0]
     if segments == None or segments == 'None': segments = ''
     if pre_req == None or pre_req == 'None': pre_req = '' # pre_reqs are not processed as codes, should be.
     else: pre_req = pre_req.replace('&', 'and')
@@ -197,6 +198,16 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     #print("\\hspace{-1cm}")
     #print("""\\vspace{1cm}""")
     print("""\\section{%s}"""%(title))
+    g_remarks = []
+    for r in sheet.iter_rows(min_row=2):
+        if r[6].value != None: g_remarks.append(r[6].value)
+    if len(g_remarks) != 0:
+        print("%global remarks\n\\begin{itemize}\n")
+        for x in g_remarks: print("\\item %s\n" % x.replace('&', 'and'))
+        print("\\end{itemize}\n")
+    blank = sheet['B2'].value 
+    if blank == '' or blank == None: return # the sheet seems empty,
+
     #table_pre = """\\begin{longtable}{@{\\extracolsep{\\fill}}rllr@{}} \
     #table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \n \\begin{longtable}{@{\\extracolsep{\\fill}}lrlr@{}} \
     table_pre = """\\setlength\\LTleft{0pt} \\setlength\\LTright{0pt} \n \\begin{longtable} \
@@ -218,7 +229,7 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
     row_style1 = "\\surrformat{%s}{%s}{%s}"
 
     q = """SELECT name, credits, segments FROM %s_courses WHERE code='%s'"""
-    g_remarks = []
+
     remarks, rem_tex = [], ''
     sem, t1, t2 = None, Decimal(0), Decimal(0)
     # t1 = total credits, t2 = credits for a semester, gt=total at the end
@@ -284,10 +295,11 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
         #t2 += credits
         #print(row_style % (code, name.title(), credits, segments))
         if display_seg: 
+            #print(segments, code)
             tbox = get_segment_line(segments)
             print((row_style+tbox) % (credits, code+rem_tex, name, segments))
         else: print(row_style1 % (credits, code+rem_tex, name))
-        if r[6].value != None: g_remarks.append(r[6].value)
+        #if r[6].value != None: g_remarks.append(r[6].value)
     #if sem_str[:2].lower()!='ba' and t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
     #if sem_str[:2].lower()!='ba': print("\\hline \\textbf{%d} & Grand Total & \\\\ \\end{longtable}"%t1)
     #if b==0 and t2 != 0: print("\\textbf{%s} & Total & \\\\"%t2)
@@ -299,10 +311,11 @@ def gen_curriculum(dept, sheet, title, level, display_seg=True):
         for i in range(len(remarks)):
             print("\\item %s\n" %(remarks[i]))
         print("\\end{enumerate}\n \end{footnotesize} ")
-    if len(g_remarks) != 0:
-        print("%global remarks\n\\begin{itemize}\n")
-        for x in g_remarks: print("\\item %s\n" % x.replace('&', 'and'))
-        print("\\end{itemize}\n")
+    #This code has moved to front.
+    #if len(g_remarks) != 0:
+    #    print("%global remarks\n\\begin{itemize}\n")
+    #    for x in g_remarks: print("\\item %s\n" % x.replace('&', 'and'))
+    #    print("\\end{itemize}\n")
     #print(g_remarks.replace('&', 'and') +" \n")
     print("""\\vspace{6mm}""")
     #print("".join(post))
@@ -356,7 +369,8 @@ if __name__ == "__main__":
         elif sys.argv[1] == "print-all": # same as above, above is not easy to modify, so.
             print_part('./parts/pre-doc.tex')
             level = sys.argv[2].upper() 
-            depts = sorted(['AI', 'ME', 'CH', 'BO', 'CE', 'CY', 'DS', 'ES', 'LA', 'MA', 'MS', 'PH'])
+            depts = sorted(['AI', 'EE', 'ME', 'CH', 'CS', 'BO', 'CE', 'BM', 'CY', 'DS', 'ES', 'LA', 'MA', 'MS', 'PH'])
+
             dept_prefix = "Department of "
             depts_expand = {'AI':'Artificial Intelligence', 'BM': 'Biomedical Engineering', 'CS': 'Computer Science and Engineering',
                     'EE': 'Electrical Engineering', 'ME': 'Mechanical and Aerospace Engineering', 'CH': 'Chemical Engineering',
