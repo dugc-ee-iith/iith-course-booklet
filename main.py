@@ -8,11 +8,11 @@ import sqlite3
 #course_details_filelist = ['./data/UG/'+y for y in [x[2] for x in walk('./data/UG')][0]]
 #print(course_details_filelist)
 
-no_cap_list = ['BTech', '2Year', 'SysCon', 'PEPS', 'Micro', '3Year', '2Year', 'BDes', 'MDes', 'ME', 'CS', 
+no_cap_list = ['BTech', '2Year', 'SysCon', 'PEPS', 'Micro', '3Year', '2Year', 'BDes', 'MDes', 'ME', 'MAE','CS', 
         'MTech', 'PhD', 'MDS', 'CY', 'II', 'III', 'IV', 'in', 'and', 'to', 
         '2d', 'for', 'a', 'HT', 'MT', 'is', 'in', 'of', 'to', 'the', 'PH', 'DSP', 'EE',
         'LA', 'CA', 'FEM', 'CFD', 'IC', 'LTE-4G', 'MAC', 'AI', 'ML', 'GIS', '-I',
-        '-II', 'MA', 'BM', 'BO', 'LA/CA', 'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS',
+        '-II', 'MA', 'BM', 'BO', 'LA/CA', 'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS', 'Economics', 'Humanity'
         'CFT', 'MHD', 'FES', 'ACM', 'MAD', 'IDM', 'EWRE', '3Year', 'Geotech', 'MSc', 'C/C++', 'IoT']
 def capitals(s):
     """capitalize the course titles, skip which are in the no_cap_list."""
