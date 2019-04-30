@@ -373,7 +373,7 @@ if __name__ == "__main__":
 
             dept_prefix = "Department of "
             depts_expand = {'AI':'Artificial Intelligence', 'BM': 'Biomedical Engineering', 'CS': 'Computer Science and Engineering',
-                    'EE': 'Electrical Engineering', 'ME': 'Mechanical and Aerospace Engineering', 'CH': 'Chemical Engineering',
+                    'EE': 'Electrical Engineering', 'ME': 'Mechanical \\\\ and Aerospace Engineering', 'CH': 'Chemical Engineering',
                     'BO': 'Biotechnology', 'CE': 'Civil Engineering', 'CY': 'Chemistry', 'DS': 'Design', 
                     'ES': 'Engineering Science', 'LA': 'Liberal Arts', 'MA': 'Mathematics', 'MS': 'Material Science and Metallurgical Engineering',
                     'PH': 'Physics'}
@@ -394,9 +394,10 @@ if __name__ == "__main__":
              
                 chap_title = "Course Descriptions"  #level_strs[level+'_desc'] 
                 print("\\chapter{"+chap_title+"}") 
-                for d in depts:
-                    if level == 'PG' and d in ['AI']: continue
-                    sect_title = dept_prefix+depts_expand[d]
+                for d in ['ID']+depts:
+                    if level == 'PG' and d in ['ID', 'AI']: continue
+                    if d=='ID': sect_title = 'Institute-wide Courses'
+                    else: sect_title = dept_prefix+depts_expand[d]
                     gen_course_description(d, level, sect_title)
             print_level(level, 1)
             print_part('./parts/post-doc.tex')
