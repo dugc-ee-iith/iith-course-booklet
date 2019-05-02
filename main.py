@@ -13,7 +13,8 @@ no_cap_list = ['BTech', '2Year', 'SysCon', 'PEPS', 'Micro', '3Year', '2Year', 'B
         '2d', 'for', 'a', 'HT', 'MT', 'is', 'in', 'of', 'to', 'the', 'PH', 'DSP', 'EE',
         'LA', 'CA', 'FEM', 'CFD', 'IC', 'LTE-4G', 'MAC', 'AI', 'ML', 'GIS', '-I',
         '-II', 'MA', 'BM', 'BO', 'LA/CA', 'CMOS', 'AC', 'DC', 'MOS', 'VLSI', 'AdS', 'Economics', 'Humanity'
-        'CFT', 'MHD', 'FES', 'ACM', 'MAD', 'IDM', 'EWRE', '3Year', 'Geotech', 'MSc', 'C/C++', 'IoT']
+        'CFT', 'MHD', 'FES', 'ACM', 'MAD', 'IDM', 'EWRE', '3Year', 'Geotech', 'MSc', 'C/C++', 'IoT'
+        'TFE', '(Jan', '(Aug', 'entry)', 'entry' 'CSP','RNA', 'DNA', 'NMR']
 def capitals(s):
     """capitalize the course titles, skip which are in the no_cap_list."""
     res = ''
@@ -373,7 +374,7 @@ if __name__ == "__main__":
 
             dept_prefix = "Department of "
             depts_expand = {'AI':'Artificial Intelligence', 'BM': 'Biomedical Engineering', 'CS': 'Computer Science and Engineering',
-                    'EE': 'Electrical Engineering', 'ME': 'Mechanical \\\\ and Aerospace Engineering', 'CH': 'Chemical Engineering',
+                    'EE': 'Electrical Engineering', 'ME': 'Mechanical and Aerospace Engineering', 'CH': 'Chemical Engineering',
                     'BO': 'Biotechnology', 'CE': 'Civil Engineering', 'CY': 'Chemistry', 'DS': 'Design', 
                     'ES': 'Engineering Science', 'LA': 'Liberal Arts', 'MA': 'Mathematics', 'MS': 'Material Science and Metallurgical Engineering',
                     'PH': 'Physics'}
