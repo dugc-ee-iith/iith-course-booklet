@@ -376,7 +376,7 @@ if __name__ == "__main__":
             depts_expand = {'AI':'Artificial Intelligence', 'BM': 'Biomedical Engineering', 'CS': 'Computer Science and Engineering',
                     'EE': 'Electrical Engineering', 'ME': 'Mechanical and Aerospace Engineering', 'CH': 'Chemical Engineering',
                     'BO': 'Biotechnology', 'CE': 'Civil Engineering', 'CY': 'Chemistry', 'DS': 'Design', 
-                    'ES': 'Engineering Science', 'LA': 'Liberal Arts', 'MA': 'Mathematics', 'MS': 'Material Science and Metallurgical Engineering',
+                    'ES': 'Engineering Science', 'LA': 'Liberal Arts', 'MA': 'Mathematics', 'MS': 'Materials Science and Metallurgical Engineering',
                     'PH': 'Physics'}
             #level_strs = {'UG_curr': "%s Course Curricula - Bachelors",
             #        'PG_curr': "%s Course Curricula - Masters and PhD",
